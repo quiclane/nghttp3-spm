@@ -55,9 +55,9 @@ jobs:
           git push
       - run: |
           set -euo pipefail
-          mapfile -t TAGS < <(gh release list --limit 100 --json tagName,createdAt -q 'sort_by(.createdAt)|reverse|.[].tagName')
+          RELS="$(gh release list --limit 100 --json tagName,createdAt -q 'sort_by(.createdAt)|reverse|.[].tagName')"
           i=0
-          for t in "${TAGS[@]}";do
+          for t in $RELS;do
             i=$((i+1))
             if [ "$i" -gt 2 ];then gh release delete "$t" -y;fi
           done
