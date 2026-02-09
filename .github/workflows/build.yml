@@ -1,0 +1,27 @@
+name:build
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 */5 * *"
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: deps
+        run: brew update && brew install cmake ninja
+      - name: build
+        run: scripts/nghttp3-ios-xc.sh
+      - name: zip
+        run: ditto -c -k --sequesterRsrc --keepParent NGHTTP3.xcframework NGHTTP3.xcframework.zip
+      - name: checksum
+        run: swift package compute-checksum NGHTTP3.xcframework.zip > SWIFTPM_CHECKSUM.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NGHTTP3
+          path: |
+            NGHTTP3.xcframework.zip
+            SWIFTPM_CHECKSUM.txt
+            UPSTREAM_SHA
+            libnghttp3_ios_arm64.a
+            libnghttp3_sim_universal.a
