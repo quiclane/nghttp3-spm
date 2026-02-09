@@ -3,25 +3,63 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 0 */5 * *"
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
-      - name: deps
-        run: brew update && brew install cmake ninja
-      - name: build
-        run: scripts/nghttp3-ios-xc.sh
-      - name: zip
-        run: ditto -c -k --sequesterRsrc --keepParent NGHTTP3.xcframework NGHTTP3.xcframework.zip
-      - name: checksum
-        run: swift package compute-checksum NGHTTP3.xcframework.zip > SWIFTPM_CHECKSUM.txt
-      - uses: actions/upload-artifact@v4
         with:
-          name: NGHTTP3
-          path: |
-            NGHTTP3.xcframework.zip
-            SWIFTPM_CHECKSUM.txt
-            UPSTREAM_SHA
-            libnghttp3_ios_arm64.a
-            libnghttp3_sim_universal.a
+          fetch-depth: 0
+      - run: brew update && brew install cmake ninja
+      - run: scripts/nghttp3-ios-xc.sh
+      - run: ditto -c -k --sequesterRsrc --keepParent NGHTTP3.xcframework NGHTTP3.xcframework.zip
+      - id: vars
+        run: |
+          set -euo pipefail
+          SHA="$(cat UPSTREAM_SHA)"
+          V="$(cat VERSION 2>/dev/null || echo 1.0.0)"
+          TAG="$V-$(date +%Y%m%d)-$SHA"
+          CHECKSUM="$(swift package compute-checksum NGHTTP3.xcframework.zip)"
+          echo "sha=$SHA" >>"$GITHUB_OUTPUT"
+          echo "v=$V" >>"$GITHUB_OUTPUT"
+          echo "tag=$TAG" >>"$GITHUB_OUTPUT"
+          echo "checksum=$CHECKSUM" >>"$GITHUB_OUTPUT"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: ${{ steps.vars.outputs.tag }}
+          body: |
+            upstream_commit=${{ steps.vars.outputs.sha }}
+            swiftpm_checksum=${{ steps.vars.outputs.checksum }}
+          files: NGHTTP3.xcframework.zip
+      - id: asset
+        run: |
+          set -euo pipefail
+          ASSET_URL="$(gh release view "${{ steps.vars.outputs.tag }}" --json assets -q '.assets[]|select(.name=="NGHTTP3.xcframework.zip")|.url')"
+          echo "asset_url=$ASSET_URL" >>"$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: |
+          set -euo pipefail
+          cat >Package.swift<<SWIFT
+          // swift-tools-version:5.9
+          import PackageDescription
+          let package=Package(name:"NGHTTP3",platforms:[.iOS(.v13)],products:[.library(name:"NGHTTP3",targets:["NGHTTP3"])],targets:[.binaryTarget(name:"NGHTTP3",url:"${{ steps.asset.outputs.asset_url }}",checksum:"${{ steps.vars.outputs.checksum }}")])
+          SWIFT
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add Package.swift
+          git commit -m "update Package.swift to ${{ steps.vars.outputs.tag }}" || true
+          git push
+      - run: |
+          set -euo pipefail
+          mapfile -t TAGS < <(gh release list --limit 100 --json tagName,createdAt -q 'sort_by(.createdAt)|reverse|.[].tagName')
+          i=0
+          for t in "${TAGS[@]}";do
+            i=$((i+1))
+            if [ "$i" -gt 2 ];then gh release delete "$t" -y;fi
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}
