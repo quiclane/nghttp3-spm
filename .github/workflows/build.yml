@@ -51,7 +51,9 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add Package.swift
-          git commit -m "update Package.swift to ${{ steps.vars.outputs.tag }}" || true
+          git commit -m "update Package.swift to ${{ steps.vars.outputs.tag }}" || exit 0
+          git fetch origin main
+          git rebase origin/main
           git push
       - run: |
           set -euo pipefail
