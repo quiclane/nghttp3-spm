@@ -45,7 +45,9 @@ jobs:
           set -euo pipefail
           ASSET_URL="$(gh release view "${{ steps.vars.outputs.tag }}" --json assets -q '.assets[]|select(.name=="NGHTTP3.xcframework.zip")|.url')"
           echo "asset_url=$ASSET_URL" >>"$GITHUB_OUTPUT"
-      - run: |
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
           set -euo pipefail
           git config user.name github-actions
           git config user.email github-actions@github.com
@@ -53,11 +55,7 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             git clean -fdx
-            cat >Package.swift<<SWIFT
-// swift-tools-version:5.9
-import PackageDescription
-let package=Package(name:"NGHTTP3",platforms:[.iOS(.v13)],products:[.library(name:"NGHTTP3",targets:["NGHTTP3"])],targets:[.binaryTarget(name:"NGHTTP3",url:"${{ steps.asset.outputs.asset_url }}",checksum:"${{ steps.vars.outputs.checksum }}")])
-SWIFT
+            printf '%s\n' '// swift-tools-version:5.9' 'import PackageDescription' "let package=Package(name:\"NGHTTP3\",platforms:[.iOS(.v13)],products:[.library(name:\"NGHTTP3\",targets:[\"NGHTTP3\"])],targets:[.binaryTarget(name:\"NGHTTP3\",url:\"${{ steps.asset.outputs.asset_url }}\",checksum:\"${{ steps.vars.outputs.checksum }}\")])" >Package.swift
             git add Package.swift
             git commit -m "update Package.swift to ${{ steps.vars.outputs.tag }}" || true
             git push && break || true
@@ -73,11 +71,11 @@ SWIFT
             i=$((i+1))
             if [ "$i" -gt 2 ];then gh release delete "$t" -y;fi
           done
-          TAGS="$(git tag -l '1.0.*' | sort -V | tail -n 2)"
-          KEEP="$(printf '%s\n' $TAGS | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
+          git fetch --tags origin
+          KEEP="$(git tag -l '1.0.*' | sort -V | tail -n 2 | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
           ALL="$(git tag -l '1.0.*' | sort -V)"
           for t in $ALL;do
-            echo "$KEEP" | grep -q "$t" && continue
+            echo "$KEEP" | tr ' ' '\n' | grep -qx "$t" && continue
             git push origin ":refs/tags/$t" || true
             git tag -d "$t" || true
           done
