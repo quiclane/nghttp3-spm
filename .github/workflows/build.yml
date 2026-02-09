@@ -55,7 +55,7 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             git clean -fdx
-            printf '%s\n' '// swift-tools-version:5.9' 'import PackageDescription' "let package=Package(name:\"NGHTTP3\",platforms:[.iOS(.v13)],products:[.library(name:\"NGHTTP3\",targets:[\"NGHTTP3\"])],targets:[.binaryTarget(name:\"NGHTTP3\",url:\"${{ steps.asset.outputs.asset_url }}\",checksum:\"${{ steps.vars.outputs.checksum }}\")])" >Package.swift
+            printf '%s\n' '// swift-tools-version:6.0' 'import PackageDescription' "let package=Package(name:\"NGHTTP3\",platforms:[.iOS(.v13)],products:[.library(name:\"NGHTTP3\",targets:[\"NGHTTP3\"])],targets:[.binaryTarget(name:\"NGHTTP3\",url:\"${{ steps.asset.outputs.asset_url }}\",checksum:\"${{ steps.vars.outputs.checksum }}\")])" >Package.swift
             git add Package.swift
             git commit -m "update Package.swift to ${{ steps.vars.outputs.tag }}" || true
             git push && break || true
