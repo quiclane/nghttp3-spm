@@ -47,8 +47,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          ASSET_URL="$(gh release view "${{ steps.vars.outputs.tag }}" --json assets -q '.assets[]|select(.name=="NGHTTP3.xcframework.zip")|.url')"
-          echo "asset_url=$ASSET_URL" >>"$GITHUB_OUTPUT"
+          URL="$(gh release view "${{ steps.vars.outputs.tag }}" --json assets -q '.assets[]|select(.name=="NGHTTP3.xcframework.zip")|.browserDownloadUrl')"
+          echo "asset_url=$URL" >>"$GITHUB_OUTPUT"
       - env:
           GH_TOKEN: ${{ github.token }}
         run: |
