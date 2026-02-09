@@ -25,7 +25,7 @@ jobs:
           CHECKSUM="$(swift package compute-checksum NGHTTP3.xcframework.zip)"
           git fetch --tags origin
           LAST="$(git tag -l '1.0.*' | sort -V | tail -n 1)"
-          if [ -z "$LAST" ];then TAG="1.0.0";else P="${LAST##*.}";TAG="1.0.$((P+1))";fi
+          if [ -z "$LAST" ];then TAG="1.0.0";else P="${LAST##*.}";TAG="1.0.$((10#$P+1))";fi
           echo "sha=$SHA" >>"$GITHUB_OUTPUT"
           echo "iosname=$IOSNAME" >>"$GITHUB_OUTPUT"
           echo "tag=$TAG" >>"$GITHUB_OUTPUT"
@@ -75,7 +75,7 @@ jobs:
           KEEP="$(git tag -l '1.0.*' | sort -V | tail -n 2 | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
           ALL="$(git tag -l '1.0.*' | sort -V)"
           for t in $ALL;do
-            echo "$KEEP" | tr ' ' '\n' | grep -qx "$t" && continue
+            printf '%s\n' "$KEEP" | tr ' ' '\n' | grep -qx "$t" && continue
             git push origin ":refs/tags/$t" || true
             git tag -d "$t" || true
           done
