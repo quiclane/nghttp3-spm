@@ -1,3 +1,3 @@
 // swift-tools-version:6.0
 import PackageDescription
-let package=Package(name:"NGHTTP3",platforms:[.iOS(.v13)],products:[.library(name:"NGHTTP3",targets:["NGHTTP3"])],targets:[.binaryTarget(name:"NGHTTP3",url:"https://github.com/quiclane/nghttp3-spm/releases/download/1.0.27/NGHTTP3.xcframework.zip",checksum:"e7b7f9272c90028ef332f0235227bda2f1ca4bd4d6d37e24bd1ba76a5de71eba")])
+let package=Package(name:"NGHTTP3",platforms:[.iOS(.v13)],products:[.library(name:"NGHTTP3",targets:["NGHTTP3"])],targets:[.binaryTarget(name:"NGHTTP3",url:"https://github.com/quiclane/nghttp3-spm/releases/download/1.0.28/NGHTTP3.xcframework.zip",checksum:"70f4f5a03f3ba7e0bb547b5d06a0a5fc52b1b1dc1316062a200f9c10cf0674fd")])
